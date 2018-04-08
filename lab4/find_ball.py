@@ -23,10 +23,16 @@ def find_ball(opencv_image, debug=False):
 		Returns [x, y, radius] of the ball, and [0,0,0] or None if no ball is found.
 	"""
 
-	ball = None
-	
-	## TODO: INSERT YOUR SOLUTION HERE
-	
+	opencv_image = cv2.GaussianBlur(opencv_image, (5,5), 0)
+
+	ball = [0,0,0]
+
+	circles = cv2.HoughCircles(opencv_image, cv2.HOUGH_GRADIENT, 1.0, 100, param1=150, param2=27, minRadius=0, maxRadius=0)
+	if circles is not None:
+		if debug:
+			display_circles(opencv_image, circles[0])
+		ball = circles[0][0]
+
 	return ball
 
 
@@ -72,4 +78,5 @@ def display_circles(opencv_image, circles, best=None):
 	pil_image.show()    
 	  
 if __name__ == "__main__":
+	find_ball(cv2.imread('imgs/test87.bmp', cv2.IMREAD_GRAYSCALE), True)
 	pass
