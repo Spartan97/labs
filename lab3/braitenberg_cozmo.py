@@ -12,7 +12,6 @@ import cv2
 import numpy as np
 import sys
 
-
 def sense_brightness(image, columns):
 	'''Maps a sensor reading to a wheel motor command'''
 	## TODO: Test that this function works and decide on the number of columns to use
@@ -29,17 +28,23 @@ def sense_brightness(image, columns):
 
 	return avg_brightness
 
-def mapping_funtion(sensor_value):
+def mapping_function(sensor_value):
 	'''Maps a sensor reading to a wheel motor command'''
-	## TODO: Define the mapping to obtain different behaviors.
-	motor_value = 0.1*sensor_value
+	motor_value = 0.25*sensor_value
+	return motor_value
+
+def inverse_mapping_function(sensor_value):
+	'''Maps a sensor reading to a wheel motor command'''
+	motor_value = 25-(0.25*sensor_value)
+	if motor_value < 0:
+		motor_value = 0
 	return motor_value
 
 async def braitenberg_machine(robot: cozmo.robot.Robot):
 	'''The core of the braitenberg machine program'''
 	# Move lift down and tilt the head up
 	robot.move_lift(-3)
-	robot.set_head_angle(cozmo.robot.MAX_HEAD_ANGLE).wait_for_completed()
+	robot.set_head_angle(cozmo.util.degrees(35)).wait_for_completed()
 	print("Press CTRL-C to quit")
 
 	while True:
@@ -63,8 +68,22 @@ async def braitenberg_machine(robot: cozmo.robot.Robot):
 
 		# Map the sensors to actuators
 		## TODO: You might want to switch which sensor is mapped to which motor.
-		motor_right = mapping_funtion(sensor_left)
-		motor_left = mapping_funtion(sensor_right)
+
+        # Vehicle 1 -- turns towards the light quickly
+#		motor_right = mapping_function(sensor_left)
+#		motor_left = mapping_function(sensor_right)
+
+		# Vehicle 2 -- turns away from the light quickly
+#		motor_right = mapping_function(sensor_right)
+#		motor_left = mapping_function(sensor_left)
+
+		# Vehicle 3 -- turns towards the light and stops
+#		motor_right = inverse_mapping_function(sensor_right)
+#		motor_left = inverse_mapping_function(sensor_left)
+
+		# Vehicle 4 -- turns away from the light and stops
+		motor_right = inverse_mapping_function(sensor_left)
+		motor_left = inverse_mapping_function(sensor_right)
 
 		print("motor_right: " + str(motor_right))
 		print("motor_left: " + str(motor_left))
