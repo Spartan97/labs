@@ -10,6 +10,7 @@ from cozmo.util import degrees, Angle, Pose, distance_mm, speed_mmps
 import math
 import time
 import numpy as np
+import sys
 
 # Wrappers for existing Cozmo navigation functions
 
@@ -102,7 +103,10 @@ def my_turn_in_place(robot, angle, speed):
 	"""
 
 	circ = math.pi*get_distance_between_wheels()
-	robot.drive_wheels(speed, -speed, duration=(circ*angle/360)/speed)
+	mod = 1
+	if angle < 0:
+		mod = -1
+	robot.drive_wheels(mod*speed, -mod*speed, duration=(circ*(angle*mod)/360.0)/(speed))
 
 def my_go_to_pose1(robot, x, y, angle_z):
 	"""Moves the robot to a pose relative to its current pose.
@@ -120,15 +124,22 @@ def my_go_to_pose1(robot, x, y, angle_z):
 
 	tar = np.array([x, y])
 	loc = np.array([robot.pose.position.x, robot.pose.position.y])
-
 	dir = tar - loc
 
-	dir_u = dir / np.linalg.norm(dir)
-	loc_u = loc / np.linalg.norm(loc)
-	angle_between = np.degrees(np.arccos(np.clip(np.dot(dir_u, loc_u), -1.0, 1.0)))
+	theta = np.degrees(np.arctan(dir[1] / dir[0])) - robot.pose_angle.degrees
+	print(theta)
+	my_turn_in_place(robot, -theta, 25)
+	time.sleep(1.0)
 
-	print(angle_between, int(angle_between))
-	my_turn_in_place(robot, angle_between, 10)
+	dist = np.linalg.norm(dir)
+	print(dist)
+	my_drive_straight(robot, dist, 25)
+	time.sleep(1.0)
+
+	phi = angle_z - robot.pose_angle.degrees
+	print(phi)
+	my_turn_in_place(robot, -phi, 25)
+	time.sleep(1.0)
 
 def my_go_to_pose2(robot, x, y, angle_z):
 	"""Moves the robot to a pose relative to its current pose.
@@ -142,7 +153,40 @@ def my_go_to_pose2(robot, x, y, angle_z):
 	# using the robot.drive_wheels() function to jointly move and rotate the 
 	# robot to reduce distance between current and desired pose (Approach 2).
 	# ####
-	pass
+
+	rho = 999999999
+	goal = np.array([x, y, np.radians(angle_z)])
+	while rho > 15:
+		rbt = np.array([robot.pose.position.x, robot.pose.position.y, robot.pose.rotation.angle_z.radians])
+
+		r = get_front_wheel_radius()
+		d = get_distance_between_wheels()
+		p1 = p2 = p3 = 1
+
+		rho = math.sqrt((rbt[0] - goal[0])**2 + (rbt[1] - goal[1])**2)
+		alpha = np.arctan((rbt[1] - goal[1])/(rbt[0] - goal[0])) - rbt[2]
+		eta = goal[2] - rbt[2]
+
+		x = p1 * rho
+		theta = p2 * alpha + p3 * eta
+
+		phi_L = (2*x - theta*d) / 2*r
+		phi_R = (2*x + theta*d) / 2*r
+		m = max(phi_L, phi_R)
+
+		phi_L = phi_L / m * 30.0
+		phi_R = phi_R / m * 30.0
+
+		print (goal - rbt, rho)
+		sys.stdout.flush()
+
+		robot.drive_wheels(phi_L, phi_R, duration=.25)
+
+	# finish the rotational part
+	phi = angle_z - robot.pose_angle.degrees
+	print(phi)
+	my_turn_in_place(robot, -phi, 25)
+	time.sleep(1.0)
 
 def my_go_to_pose3(robot, x, y, angle_z):
 	"""Moves the robot to a pose relative to its current pose.
@@ -156,13 +200,30 @@ def my_go_to_pose3(robot, x, y, angle_z):
 	# as fast as possible. You can experiment with the built-in Cozmo function
 	# (cozmo_go_to_pose() above) to understand its strategy and do the same.
 	# ####
-	pass
+
+	# First turn to face the cube (or somewhat close to it)
+	# This is the first part of our go_to_pose1
+	tar = np.array([x, y])
+	loc = np.array([robot.pose.position.x, robot.pose.position.y])
+	dir = tar - loc
+
+	theta = np.degrees(np.arctan(dir[1] / dir[0])) - robot.pose_angle.degrees
+	print(theta)
+	my_turn_in_place(robot, -theta, 25)
+	time.sleep(1.0)
+
+	# Then use our inverse kinematic function to take it from there.
+	my_go_to_pose2(robot, x, y, angle_z)
 
 def run(robot: cozmo.robot.Robot):
 #	print("***** Back wheel radius: " + str(get_front_wheel_radius()))
 #	print("***** Distance between wheels: " + str(get_distance_between_wheels()))
 
 	## Example tests of the functions
+
+#	my_turn_in_place(robot, 90, 25)
+#	time.sleep(1.0)
+#	my_turn_in_place(robot, -90, 25)
 
 #	cozmo_drive_straight(robot, 62, 50)
 #	cozmo_turn_in_place(robot, 60, 30)
@@ -172,9 +233,10 @@ def run(robot: cozmo.robot.Robot):
 #	my_drive_straight(robot, 62, 50)
 #	my_turn_in_place(robot, 90, 30)
 
-	my_go_to_pose1(robot, 100, 100, 45)
+#	cozmo_go_to_pose(robot, 100, 100, 45)
+#	my_go_to_pose1(robot, 100, 100, 45)
 #	my_go_to_pose2(robot, 100, 100, 45)
-#	my_go_to_pose3(robot, 100, 100, 45)
+	my_go_to_pose3(robot, 100, 100, 45)
 
 
 if __name__ == '__main__':

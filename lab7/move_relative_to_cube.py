@@ -33,9 +33,12 @@ def move_relative_to_cube(robot: cozmo.robot.Robot):
 
 	desired_pose_relative_to_cube = Pose(0, 100, 0, angle_z=degrees(90))
 
-	#### Approach 1 -- turn to face cube, then move to cube, then turn in place to heading
-	desired_pose = get_relative_pos(desired_pose_relative_to_cube, cube.pose)
-	robot_pose = robot.pose
+#	desired_pose = get_relative_pose(desired_pose_relative_to_cube, cube.pose)	
+#	odo.my_go_to_pose1(robot, desired_pose.position.x, desired_pose.position.y, desired_pose.rotation.angle_z.degrees)
+
+	# Somehow I got my poses mixed up for go_to_pose 2/3, but this works great!
+	desired_pose = cube.pose
+	odo.my_go_to_pose2(robot, desired_pose.position.x, desired_pose.position.y, desired_pose.rotation.angle_z.degrees)
 
 def test_program(robot: cozmo.robot.Robot):
 	print(odo.get_front_wheel_radius())
