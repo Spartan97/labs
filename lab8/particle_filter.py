@@ -52,37 +52,30 @@ def measurement_update(particles, measured_marker_list, grid):
 		Returns: the list of particles represents belief p(x_{t} | u_{t})
 			after measurement update
 	"""
-
-	# find the actual distance to each marker measured by the robot
-	dists = []
-	for m in measured_marker_list:
-		dists.append(grid_distance(0, 0, m[0], m[1]))
-	dists.sort()
-
+		
 	# create a normal distirbution to calculate a probability within
-	norm_dist = scipy.stats.norm(0, 5)
+	norm_dist = scipy.stats.norm(0, 1)
 
 	weights = np.zeros(len(particles))
 	for i in range(len(particles)):
 		p = particles[i]
-		
-		# get the markers 
+
+		gaussian = 1
 		markers = p.read_markers(grid)
-		my_dists = []
-		for m in markers:
-			my_dists.append(grid_distance(0, 0, m[0], m[1]))		
-		my_dists.sort()
+		for n in range(len(measured_marker_list)):
+			gauss_sum = 0
+			for m in range(len(markers)):
+				my_marker = markers[m]
+				meas_marker = measured_marker_list[n]
+				gauss_sum += norm_dist.pdf(my_marker[0] - meas_marker[0]) * norm_dist.pdf(my_marker[1] - meas_marker[1]) * norm_dist.pdf(my_marker[2] - meas_marker[2])
+			gaussian *= gauss_sum
 
-		if len(dists) > 0 and len(my_dists) > 0:
-			weight = norm_dist.pdf(my_dists[0] - dists[0])
-			weights[i] = weight
+		if gaussian == 1:
+			gaussian = 0
+		weights[i] = gaussian
 
-	norm = np.linalg.norm(weights)
-	if norm != 0:
-		weights /= norm
-
-	measured_particles = particles
-#	measured_particles = np.random.choice(particles, len(particles), p=weights)
+	weights /= np.sum(weights)
+	measured_particles = np.random.choice(particles, len(particles), p=weights)
 
 	return measured_particles
 
@@ -90,3 +83,36 @@ def measurement_update(particles, measured_marker_list, grid):
 # use gaussian to determine probability and get weights for each particle
 # normalize
 # resample to get same number of particles, but using weights distribution.
+
+#	# find the actual distance to each marker measured by the robot
+#	dists = []
+#	for m in measured_marker_list:
+#		dists.append(grid_distance(0, 0, m[0], m[1]))
+#	dists.sort()
+#
+#	# create a normal distirbution to calculate a probability within
+#	norm_dist = scipy.stats.norm(0, 5)
+#
+#	weights = np.zeros(len(particles))
+#	for i in range(len(particles)):
+#		p = particles[i]
+#		
+#		# get the markers 
+#		markers = p.read_markers(grid)
+#		my_dists = []
+#		for m in markers:
+#			my_dists.append(grid_distance(0, 0, m[0], m[1]))		
+#		my_dists.sort()
+#
+#		if len(dists) > 0 and len(my_dists) > 0:
+#			weight = norm_dist.pdf(my_dists[0] - dists[0])
+#			weights[i] = weight
+#
+#	norm = np.linalg.norm(weights)
+#	if norm != 0:
+#		weights /= norm
+
+#	measured_particles = particles
+#	measured_particles = np.random.choice(particles, len(particles), p=weights)
+
+#	return measured_particles
