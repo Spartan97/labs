@@ -6,6 +6,10 @@ import numpy as np
 import scipy
 from sklearn import mixture
 
+# create a normal distirbutions to calculate a probability within
+norm_dist_trans = scipy.stats.norm(0, MARKER_TRANS_SIGMA)
+norm_dist_rot = scipy.stats.norm(0, MARKER_ROT_SIGMA)
+
 def motion_update(particles, odom):
 	""" Particle filter motion update
 
@@ -52,9 +56,6 @@ def measurement_update(particles, measured_marker_list, grid):
 		Returns: the list of particles represents belief p(x_{t} | u_{t})
 			after measurement update
 	"""
-	# create a normal distirbutions to calculate a probability within
-	norm_dist_trans = scipy.stats.norm(0, MARKER_TRANS_SIGMA)
-	norm_dist_rot = scipy.stats.norm(0, MARKER_ROT_SIGMA)
 
 	weights = np.zeros(len(particles))
 	for i in range(len(particles)):
@@ -70,8 +71,8 @@ def measurement_update(particles, measured_marker_list, grid):
 				gauss_sum += norm_dist_trans.pdf(my_marker[0] - meas_marker[0]) * norm_dist_trans.pdf(my_marker[1] - meas_marker[1]) * norm_dist_rot.pdf(my_marker[2] - meas_marker[2])
 			gaussian *= gauss_sum
 
-#		if gaussian == 1:
-#			gaussian = 0
+		if gaussian == 1:
+			gaussian = 0
 		weights[i] = gaussian
 
 	total = np.sum(weights)
