@@ -9,6 +9,7 @@ from queue import PriorityQueue
 import math
 import cozmo
 from collections import defaultdict
+import numpy as np
 
 def find_next_to_eval(open_set, f_score):
 	min = open_set[0]
@@ -94,6 +95,21 @@ def astar(grid, heuristic):
 	print("Failed to find a valid path")
 	return
 
+scale = 25
+def convert_pose_to_coords(pose):
+	return (int(pose.position.x/scale + 5), int(pose.position.y/scale + 5))
+
+def expand_obstacle(coord):
+	coords = []
+	for n in range(-2, 3):
+		for m in range(-2, 3):
+			coords.append((coord[0] + n, coord[1] + m))
+
+	return coords
+
+def isFound(cube):
+	return not (cube.pose.position.x == 0 and cube.pose.position.y == 0 and cube.pose.position.z == 0)
+
 def cozmoBehavior(robot: cozmo.robot.Robot):
 	"""Cozmo search behavior. See assignment description for details
 
@@ -106,23 +122,52 @@ def cozmoBehavior(robot: cozmo.robot.Robot):
 		robot -- cozmo.robot.Robot instance, supplied by cozmo.run_program
 	"""
 
-	global grid, stopevent
+	global grid, stopevent, scale
+
+	robot.set_head_angle(cozmo.util.degrees(0)).wait_for_completed()
 
 	while not stopevent.is_set():
-		# Find the three light cubes using built-in functions
-		cube1 = robot.world.get_light_cube(LightCube1Id).pose  # looks like a paperclip
-		cube2 = robot.world.get_light_cube(LightCube2Id).pose  # looks like a lamp / heart
-		cube3 = robot.world.get_light_cube(LightCube3Id).pose  # looks like the letters 'ab' over 'T'
+		grid.clearObstacles()
+		grid.setStart(convert_pose_to_coords(robot.pose))
 
-		# Set the location of the objects/goal in the grid based on the cubes
-		grid.addGoal((cube1.position.x, cube1.position.y))
-		grid.addObstacle((cube2.position.x, cube2.position.y))
-		grid.addObstacle((cube3.position.x, cube3.position.y))
+		# Find up to three light cubes using built-in functions
+		cubes = [robot.world.get_light_cube(cozmo.objects.LightCube1Id), robot.world.get_light_cube(cozmo.objects.LightCube2Id), robot.world.get_light_cube(cozmo.objects.LightCube3Id)]
+		desired_angle = cubes[0].pose.rotation.angle_z.degrees
+
+		# Set the location of the goal in the grid, or set it to the middle
+		if isFound(cubes[0]):
+			grid.clearGoals()
+			target_coords = convert_pose_to_coords(cubes[0].pose)
+			approach_x = approach_y = 0
+			grid.addObstacles(expand_obstacle(target_coords))
+			approach_angle = cubes[0].pose.rotation.angle_z
+			approach_x = 3*round(math.cos(approach_angle.radians), 0)
+			approach_y = 3*round(math.sin(approach_angle.radians), 0)
+			grid.addGoal((target_coords[0] - approach_x, target_coords[1] - approach_y))
+		elif grid.getStart() == (12, 12):
+			robot.turn_in_place(cozmo.util.radians(10))
+			continue
+		else:
+			grid.addGoal((12, 12))
+
+		if isFound(cubes[1]):
+			grid.addObstacles(expand_obstacle(convert_pose_to_coords(cubes[1].pose)))
+		if isFound(cubes[2]):
+			grid.addObstacles(expand_obstacle(convert_pose_to_coords(cubes[2].pose)))
 
 		# Run Astar
-		# Should approach Cube #1 from a specific side without hitting cubes 2 or 3
-		pass
+		astar(grid, heuristic)
 
+		# Move to next
+		dx = (grid.getPath()[1][0] - grid.getPath()[0][0])*scale
+		dy = (grid.getPath()[1][1] - grid.getPath()[0][1])*scale
+		dh = cozmo.util.radians(math.atan2(dy, dx)) - robot.pose.rotation.angle_z
+		robot.turn_in_place(dh).wait_for_completed()
+		robot.drive_straight(cozmo.util.distance_mm(math.sqrt(dx*dx + dy*dy)), cozmo.util.speed_mmps(25)).wait_for_completed()
+
+		if math.sqrt((robot.pose.position.x - cubes[0].pose.position.x)**2 + (robot.pose.position.y - cubes[0].pose.position.y)**2) < 100:
+			robot.turn_in_place(cozmo.util.degrees(desired_angle - robot.pose.rotation.angle_z.degrees)).wait_for_completed()
+			stopevent.set()
 
 ######################## DO NOT MODIFY CODE BELOW THIS LINE ####################################
 
