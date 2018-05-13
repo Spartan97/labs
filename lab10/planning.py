@@ -144,11 +144,10 @@ def cozmoBehavior(robot: cozmo.robot.Robot):
 			approach_x = 3*round(math.cos(approach_angle.radians), 0)
 			approach_y = 3*round(math.sin(approach_angle.radians), 0)
 			grid.addGoal((target_coords[0] - approach_x, target_coords[1] - approach_y))
-		elif grid.getStart() == (12, 12):
-			robot.turn_in_place(cozmo.util.radians(10))
-			continue
 		else:
-			grid.addGoal((12, 12))
+			while not isFound(cubes[0]):
+				robot.turn_in_place(cozmo.util.degrees(10)).wait_for_completed()
+				cubes[0] = robot.world.get_light_cube(cozmo.objects.LightCube1Id)
 
 		if isFound(cubes[1]):
 			grid.addObstacles(expand_obstacle(convert_pose_to_coords(cubes[1].pose)))
