@@ -44,16 +44,17 @@ class ImageClassifier:
 
 		for image in data:
 			# try blurring image
-			image = exposure.rescale_intensity(image, "image")
+#			image = exposure.rescale_intensity(image, "image")
 			image = color.rgb2gray(image) # convert to grayscale
 			fd = feature.hog(image, orientations=16, pixels_per_cell=(24,24), cells_per_block=(8,8), visualise=False)
+#			fd = feature.hog(image, orientations=8, pixels_per_cell=(8,8), cells_per_block=(2,2), visualise=False)
 			feature_data.append(fd)
 
 		return(feature_data)
 
 	# Train model and save the trained model to self.classifier
 	def train_classifier(self, train_data, train_labels):
-		self.classifier = neighbors.KNeighborsClassifier(n_neighbors=7, weights="distance")
+		self.classifier = neighbors.KNeighborsClassifier(n_neighbors=2, weights="distance")
 		self.classifier.fit(train_data, train_labels)
 
 	# predict labels of test data using trained model in self.classifier
@@ -96,7 +97,7 @@ async def robot_main(robot: cozmo.robot.Robot):
 	img_clf.train_classifier(train_data, train_labels)
 
 	robot.move_lift(-3)
-	await robot.set_head_angle(cozmo.util.degrees(-10)).wait_for_completed()
+	await robot.set_head_angle(cozmo.util.degrees(10)).wait_for_completed()
 	robot.camera.image_stream_enabled = True
 	robot.camera.color_image_enabled = True
 
@@ -125,17 +126,19 @@ async def robot_main(robot: cozmo.robot.Robot):
 		elif labels[0] == 'drone':
 			pass
 		elif labels[0] == 'inspection':
-			robot.drive_wheels(25, -25)
-			time.sleep(.25)
-			robot.drive_wheels(-25, 25)
-			time.sleep(.5)
-			robot.drive_wheels(25, -25)
-			time.sleep(.25)
+			await robot.drive_wheels(25, -25)
+			time.sleep(1)
+			await robot.drive_wheels(-25, 25)
+			time.sleep(2)
+			await robot.drive_wheels(25, -25)
+			time.sleep(1)
+			await robot.drive_wheels(0, 0)
 		elif labels[0] == 'truck':
-			robot.drive_wheels(25, 25)
-			time.sleep(.5)
-			robot.drive_wheels(-25, -25)
-			time.sleep(.5)
+			await robot.drive_wheels(25, 25)
+			time.sleep(2)
+			await robot.drive_wheels(-25, -25)
+			time.sleep(2)
+			await robot.drive_wheels(0, 0)
 		elif labels[0] == 'hands':
 			pass
 		elif labels[0] == 'place':
@@ -149,5 +152,5 @@ async def robot_main(robot: cozmo.robot.Robot):
 		time.sleep(.25)
 
 if __name__ == "__main__":
-	cozmo.run_program(robot_main)
+	cozmo.run_program(robot_main, use_viewer=True, force_viewer_on_top=True)
 	main()
