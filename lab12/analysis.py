@@ -20,54 +20,48 @@
 # value iteration.
 
 def question2():
-    answerDiscount = 0.9
-    answerNoise = 0.2
-    return answerDiscount, answerNoise
+	answerDiscount = 0.9
+	answerNoise = 0.2
+	return answerDiscount, answerNoise
 
 def question3a():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
-    return answerDiscount, answerNoise, answerLivingReward
-    # If not possible, return 'NOT POSSIBLE'
+	answerDiscount = .9
+	answerNoise = .1
+	answerLivingReward = -3
+	return answerDiscount, answerNoise, answerLivingReward
 
 def question3b():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
-    return answerDiscount, answerNoise, answerLivingReward
-    # If not possible, return 'NOT POSSIBLE'
+	answerDiscount = .1
+	answerNoise = .1
+	answerLivingReward = -2
+	return answerDiscount, answerNoise, answerLivingReward
 
 def question3c():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
-    return answerDiscount, answerNoise, answerLivingReward
-    # If not possible, return 'NOT POSSIBLE'
+	answerDiscount = .75
+	answerNoise = .1
+	answerLivingReward = 0
+	return answerDiscount, answerNoise, answerLivingReward
 
 def question3d():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
-    return answerDiscount, answerNoise, answerLivingReward
-    # If not possible, return 'NOT POSSIBLE'
+	answerDiscount = .9
+	answerNoise = .1
+	answerLivingReward = 0
+	return answerDiscount, answerNoise, answerLivingReward
 
 def question3e():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
-    return answerDiscount, answerNoise, answerLivingReward
-    # If not possible, return 'NOT POSSIBLE'
+	answerDiscount = 0
+	answerNoise = 0
+	answerLivingReward = 0
+	return answerDiscount, answerNoise, answerLivingReward
 
 def question6():
-    answerEpsilon = None
-    answerLearningRate = None
-    return answerEpsilon, answerLearningRate
-    # If not possible, return 'NOT POSSIBLE'
+	answerEpsilon = None
+	answerLearningRate = None
+	return answerEpsilon, answerLearningRate
 
 if __name__ == '__main__':
-    print('Answers to analysis questions:')
-    import analysis
-    for q in [q for q in dir(analysis) if q.startswith('question')]:
-        response = getattr(analysis, q)()
-        print('  Question %s:\t%s' % (q, str(response)))
+	print('Answers to analysis questions:')
+	import analysis
+	for q in [q for q in dir(analysis) if q.startswith('question')]:
+		response = getattr(analysis, q)()
+		print('  Question %s:\t%s' % (q, str(response)))
