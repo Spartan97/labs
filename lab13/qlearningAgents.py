@@ -19,168 +19,198 @@ from featureExtractors import *
 import random,util,math
 
 class QLearningAgent(ReinforcementAgent):
-    """
-      Q-Learning Agent
+	"""
+	  Q-Learning Agent
 
-      Functions you should fill in:
-        - computeValueFromQValues
-        - computeActionFromQValues
-        - getQValue
-        - getAction
-        - update
+	  Functions you should fill in:
+		- computeValueFromQValues
+		- computeActionFromQValues
+		- getQValue
+		- getAction
+		- update
 
-      Instance variables you have access to
-        - self.epsilon (exploration prob)
-        - self.alpha (learning rate)
-        - self.discount (discount rate)
+	  Instance variables you have access to
+		- self.epsilon (exploration prob)
+		- self.alpha (learning rate)
+		- self.discount (discount rate)
 
-      Functions you should use
-        - self.getLegalActions(state)
-          which returns legal actions for a state
-    """
-    def __init__(self, **args):
-        "You can initialize Q-values here..."
-        ReinforcementAgent.__init__(self, **args)
+	  Functions you should use
+		- self.getLegalActions(state)
+		  which returns legal actions for a state
+	"""
+	def __init__(self, **args):
+		"You can initialize Q-values here..."
+		ReinforcementAgent.__init__(self, **args)
 
-        "*** YOUR CODE HERE ***"
+		self.qValues = {}
+		self.setEpsilon(args['epsilon'])
+		self.setLearningRate(args['alpha'])
+		self.setDiscount(args['gamma'])
 
-    def getQValue(self, state, action):
-        """
-          Returns Q(state,action)
-          Should return 0.0 if we have never seen a state
-          or the Q node value otherwise
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+	def getQValue(self, state, action):
+		"""
+		  Returns Q(state,action)
+		  Should return 0.0 if we have never seen a state
+		  or the Q node value otherwise
+		"""
+		if state in self.qValues:
+			qvals = self.qValues[state]
+			if action in qvals:
+				return qvals[action]
+		return 0.0
 
+	def computeValueFromQValues(self, state):
+		"""
+		  Returns max_action Q(state,action)
+		  where the max is over legal actions.  Note that if
+		  there are no legal actions, which is the case at the
+		  terminal state, you should return a value of 0.0.
+		"""
+		legal_actions = self.getLegalActions(state)
+		if len(legal_actions) == 0:
+			return 0.0
 
-    def computeValueFromQValues(self, state):
-        """
-          Returns max_action Q(state,action)
-          where the max is over legal actions.  Note that if
-          there are no legal actions, which is the case at the
-          terminal state, you should return a value of 0.0.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+		value = -999999999
+		for action in legal_actions:
+			value = max(value, self.getQValue(state, action))
 
-    def computeActionFromQValues(self, state):
-        """
-          Compute the best action to take in a state.  Note that if there
-          are no legal actions, which is the case at the terminal state,
-          you should return None.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+		return value
 
-    def getAction(self, state):
-        """
-          Compute the action to take in the current state.  With
-          probability self.epsilon, we should take a random action and
-          take the best policy action otherwise.  Note that if there are
-          no legal actions, which is the case at the terminal state, you
-          should choose None as the action.
+	def computeActionFromQValues(self, state):
+		"""
+		  Compute the best action to take in a state.  Note that if there
+		  are no legal actions, which is the case at the terminal state,
+		  you should return None.
+		"""
+		legal_actions = self.getLegalActions(state)
+		if len(legal_actions) == 0:
+			return None
 
-          HINT: You might want to use util.flipCoin(prob)
-          HINT: To pick randomly from a list, use random.choice(list)
-        """
-        # Pick Action
-        legalActions = self.getLegalActions(state)
-        action = None
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+		maxVal = -999999999
+		maxAct = None
+		for action in legal_actions:
+			val = self.getQValue(state)
+			if val > maxVal:
+				maxVal = val
+				maxAct = action
+			elif val == maxVal: # randomly choose if the policies are equal
+				maxAct = random.choice([maxAct, action])
 
-        return action
+		return maxAct
 
-    def update(self, state, action, nextState, reward):
-        """
-          The parent class calls this to observe a
-          state = action => nextState and reward transition.
-          You should do your Q-Value update here
+	def getAction(self, state):
+		"""
+		  Compute the action to take in the current state.  With
+		  probability self.epsilon, we should take a random action and
+		  take the best policy action otherwise.  Note that if there are
+		  no legal actions, which is the case at the terminal state, you
+		  should choose None as the action.
 
-          NOTE: You should never call this function,
-          it will be called on your behalf
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+		  HINT: You might want to use util.flipCoin(prob)
+		  HINT: To pick randomly from a list, use random.choice(list)
+		"""
+		# Pick Action
+		legalActions = self.getLegalActions(state)
+		if len(legalActions) == 0:
+			return None
+		
+		if util.flipCoin(self.epsilon): # random action
+			return random.choice(legalActions)
+		else: # best policy
+			return self.getPolicy(state)
 
-    def getPolicy(self, state):
-        return self.computeActionFromQValues(state)
+	def update(self, state, action, nextState, reward):
+		"""
+		  The parent class calls this to observe a
+		  state = action => nextState and reward transition.
+		  You should do your Q-Value update here
 
-    def getValue(self, state):
-        return self.computeValueFromQValues(state)
+		  NOTE: You should never call this function,
+		  it will be called on your behalf
+		"""
+		qval = self.getQValue(state, action)
+		newval = self.getValue(nextState)
+
+		newqval = (1 - self.alpha)*qval + self.alpha*(reward + self.gamma*newval)
+		self.qValues[state][action] = newqval
+
+	def getPolicy(self, state):
+		return self.computeActionFromQValues(state)
+
+	def getValue(self, state):
+		return self.computeValueFromQValues(state)
 
 
 class PacmanQAgent(QLearningAgent):
-    "Exactly the same as QLearningAgent, but with different default parameters"
+	"Exactly the same as QLearningAgent, but with different default parameters"
 
-    def __init__(self, epsilon=0.05,gamma=0.8,alpha=0.2, numTraining=0, **args):
-        """
-        These default parameters can be changed from the pacman.py command line.
-        For example, to change the exploration rate, try:
-            python pacman.py -p PacmanQLearningAgent -a epsilon=0.1
+	def __init__(self, epsilon=0.05,gamma=0.8,alpha=0.2, numTraining=0, **args):
+		"""
+		These default parameters can be changed from the pacman.py command line.
+		For example, to change the exploration rate, try:
+			python pacman.py -p PacmanQLearningAgent -a epsilon=0.1
 
-        alpha    - learning rate
-        epsilon  - exploration rate
-        gamma    - discount factor
-        numTraining - number of training episodes, i.e. no learning after these many episodes
-        """
-        args['epsilon'] = epsilon
-        args['gamma'] = gamma
-        args['alpha'] = alpha
-        args['numTraining'] = numTraining
-        self.index = 0  # This is always Pacman
-        QLearningAgent.__init__(self, **args)
+		alpha    - learning rate
+		epsilon  - exploration rate
+		gamma    - discount factor
+		numTraining - number of training episodes, i.e. no learning after these many episodes
+		"""
+		args['epsilon'] = epsilon
+		args['gamma'] = gamma
+		args['alpha'] = alpha
+		args['numTraining'] = numTraining
+		self.index = 0  # This is always Pacman
+		QLearningAgent.__init__(self, **args)
 
-    def getAction(self, state):
-        """
-        Simply calls the getAction method of QLearningAgent and then
-        informs parent of action for Pacman.  Do not change or remove this
-        method.
-        """
-        action = QLearningAgent.getAction(self,state)
-        self.doAction(state,action)
-        return action
+	def getAction(self, state):
+		"""
+		Simply calls the getAction method of QLearningAgent and then
+		informs parent of action for Pacman.  Do not change or remove this
+		method.
+		"""
+		action = QLearningAgent.getAction(self,state)
+		self.doAction(state,action)
+		return action
 
 
 class ApproximateQAgent(PacmanQAgent):
-    """
-       ApproximateQLearningAgent
+	"""
+	   ApproximateQLearningAgent
 
-       You should only have to overwrite getQValue
-       and update.  All other QLearningAgent functions
-       should work as is.
-    """
-    def __init__(self, extractor='IdentityExtractor', **args):
-        self.featExtractor = util.lookup(extractor, globals())()
-        PacmanQAgent.__init__(self, **args)
-        self.weights = util.Counter()
+	   You should only have to overwrite getQValue
+	   and update.  All other QLearningAgent functions
+	   should work as is.
+	"""
+	def __init__(self, extractor='IdentityExtractor', **args):
+		self.featExtractor = util.lookup(extractor, globals())()
+		PacmanQAgent.__init__(self, **args)
+		self.weights = util.Counter()
 
-    def getWeights(self):
-        return self.weights
+	def getWeights(self):
+		return self.weights
 
-    def getQValue(self, state, action):
-        """
-          Should return Q(state,action) = w * featureVector
-          where * is the dotProduct operator
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+	def getQValue(self, state, action):
+		"""
+		  Should return Q(state,action) = w * featureVector
+		  where * is the dotProduct operator
+		"""
+		"*** YOUR CODE HERE ***"
+		util.raiseNotDefined()
 
-    def update(self, state, action, nextState, reward):
-        """
-           Should update your weights based on transition
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+	def update(self, state, action, nextState, reward):
+		"""
+		   Should update your weights based on transition
+		"""
+		"*** YOUR CODE HERE ***"
+		util.raiseNotDefined()
 
-    def final(self, state):
-        "Called at the end of each game."
-        # call the super-class final method
-        PacmanQAgent.final(self, state)
+	def final(self, state):
+		"Called at the end of each game."
+		# call the super-class final method
+		PacmanQAgent.final(self, state)
 
-        # did we finish training?
-        if self.episodesSoFar == self.numTraining:
-            # you might want to print your weights here for debugging
-            "*** YOUR CODE HERE ***"
-            pass
+		# did we finish training?
+		if self.episodesSoFar == self.numTraining:
+			# you might want to print your weights here for debugging
+			"*** YOUR CODE HERE ***"
+			pass
